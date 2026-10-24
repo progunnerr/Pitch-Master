@@ -1,0 +1,10 @@
+node_modules/
+.expo/
+.build-tmp/
+dist*/
+assets/
+public/
+package-lock.json
+docs/screenshots/
+AGENTS.md
+.claude/

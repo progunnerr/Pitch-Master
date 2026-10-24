@@ -6,6 +6,10 @@ node_modules/
 # Expo
 .expo/
 dist/
+dist-*/
+.build-tmp/
+public/canvaskit.wasm
+public/__phone-preview.html
 web-build/
 expo-env.d.ts
 
