@@ -74,7 +74,7 @@ Run this on both Android and iOS with a matching Expo Go SDK or a development bu
 15. Choose different Sa values and sing along with the Sargam ladder. Check that movable Do changes keys, highlights the correct wheel answer after grading, and labels the new major positions.
 16. Complete unaided and assisted rounds in all four modes, replay completed prompts, close and reopen the app, and verify totals/streaks. Verify storage retry behavior on a device with restricted or unavailable local storage.
 
-These physical-device checks have not been run in this workspace. No microphone or pitch-detection test is required for Phases 1–3.
+On October 24, 2026, the user installed an iOS Release build through Xcode 27.1 with free Personal Team signing and confirmed that the app opened and played audio with the Mac disconnected and internet access off. Local Expo lint and TypeScript checks passed. See the [installation and renewal guide](IOS-PERSONAL-TEAM.md) for the working procedure and certificate fixes. This confirms offline launch/audio; the full physical-device checklist above remains outstanding. No microphone or pitch-detection test is required for Phases 1–3.
 
 ## Dependency advisories
 

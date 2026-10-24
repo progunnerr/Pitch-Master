@@ -29,6 +29,10 @@ This runs `expo start --clear` directly, so PowerShell does not need to forward 
 
 If your Expo Go release does not support SDK 58, use a development build. Install `expo-dev-client`, then run `npx expo run:android` with the Android SDK installed, or `npx expo run:ios` on a Mac with Xcode. This MVP uses libraries included in Expo Go; it does not require custom native audio code.
 
+### Standalone installation on your own iPhone
+
+See the [iPhone Personal Team installation and seven-day renewal guide](docs/IOS-PERSONAL-TEAM.md) for the verified local Xcode Release procedure, CocoaPods HTTPS and Apple certificate fixes, device trust, and offline checks. A free Apple Account is sufficient; the installed app runs without Expo Go or a development server.
+
 ## Features
 
 - A Skia wheel with fixed absolute notes and an independently rotating relative ring.
