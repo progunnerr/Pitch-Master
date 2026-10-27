@@ -36,7 +36,7 @@ See the [iPhone Personal Team installation and seven-day renewal guide](docs/IOS
 ## Features
 
 - A Skia wheel with fixed absolute notes and an independently rotating relative ring.
-- Clockwise and counterclockwise dragging, 30° snapping, and rotation buttons.
+- Independent clockwise and counterclockwise dragging of either ring, 30° snapping, and rotation buttons.
 - Tap an outer note to select and hear the tonic. Tap an inner note to hear that absolute pitch without changing the tonic. Tap the center to replay the tonic.
 - Western solfège, Sargam, and numeric degrees. Absolute sharps/flats and raised/lowered solfège conventions are independent settings.
 - A tonic picker, interval and frequency readouts, octave selection (3–5), and an ascending/descending chromatic listening sequence.
@@ -84,7 +84,7 @@ The metronome marks beat 1 of every bar with a brighter, longer bell-like ping; 
 
 **Outer ring:** absolute pitches in chromatic order, starting with C at the top. **Inner ring:** intervals from the current tonic. Moving the inner ring clockwise raises the tonic; moving it counterclockwise lowers the tonic. Do, Sa, and degree 1 always align with the highlighted absolute note.
 
-`re`, `ga`, `dha`, and `ni` indicate komal Sargam notes. `Ma⁺` means tivra Ma. The note details show the full names. This app teaches twelve-tone equal temperament with A4 = 440 Hz; Hindustani raga intonation can differ. Chromatic solfège can use Di/Ri/Fi/Si/Li or Ra/Me/Se/Le/Te. Numeric degrees use the reference convention 1, ♭2, 2, ♭3, 3, 4, ♯4, 5, ♭6, 6, ♭7, 7.
+Sargam uses traditional marks in both English and Hindi: an underline for komal Re, Ga, Dha, and Ni, and a vertical mark above tivra Ma. Unmarked notes are shuddha. Select the Sargam language in settings; English remains the default. The note details show the full names. This app teaches twelve-tone equal temperament with A4 = 440 Hz; Hindustani raga intonation can differ. Chromatic solfège can use Di/Ri/Fi/Si/Li or Ra/Me/Se/Le/Te. Numeric degrees use the reference convention 1, ♭2, 2, ♭3, 3, 4, ♯4, 5, ♭6, 6, ♭7, 7.
 
 With a non-chromatic scale, degree and solfège labels follow that scale's interval spelling: minor blues uses ♭5 / Se, and minor thirds use ♭3 / Me. The outer ring keeps its chromatic sharp/flat spelling; it shows equal-tempered pitch positions, not diatonic key-signature spelling.
 

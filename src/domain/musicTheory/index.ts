@@ -1,6 +1,7 @@
 import { scaleDegree, type Direction, type ScaleId } from './scales.ts';
 
 export type Notation = 'solfege' | 'sargam' | 'degrees';
+export type SargamLanguage = 'english' | 'hindi';
 export type Accidentals = 'sharps' | 'flats';
 
 export const PITCH_CLASSES = Array.from({ length: 12 }, (_, index) => index);
@@ -34,7 +35,50 @@ const SOLFEGE_FLATS = [
   'Te',
   'Ti',
 ] as const;
-const SARGAM = ['Sa', 're', 'Re', 'ga', 'Ga', 'Ma', 'Ma⁺', 'Pa', 'dha', 'Dha', 'ni', 'Ni'] as const;
+// Combining low lines and a vertical line above keep traditional marks attached
+// to the syllable in wheel labels, inline formulas, and copied text.
+const SARGAM = [
+  'Sa',
+  'R\u0332e\u0332',
+  'Re',
+  'G\u0332a\u0332',
+  'Ga',
+  'Ma',
+  'M\u030Da',
+  'Pa',
+  'D\u0332h\u0332a\u0332',
+  'Dha',
+  'N\u0332i\u0332',
+  'Ni',
+] as const;
+const SARGAM_HINDI = [
+  'सा',
+  'रे\u0332',
+  'रे',
+  'गा\u0332',
+  'गा',
+  'मा',
+  'मा\u030D',
+  'पा',
+  'धा\u0332',
+  'धा',
+  'नी\u0332',
+  'नी',
+] as const;
+const SARGAM_FULL_HINDI = [
+  'सा',
+  'कोमल रे',
+  'शुद्ध रे',
+  'कोमल गा',
+  'शुद्ध गा',
+  'शुद्ध मा',
+  'तीव्र मा',
+  'पा',
+  'कोमल धा',
+  'शुद्ध धा',
+  'कोमल नी',
+  'शुद्ध नी',
+] as const;
 const SARGAM_FULL = [
   'Sa',
   'komal Re',
@@ -85,9 +129,10 @@ export function relativeName(
   interval: number,
   notation: Notation,
   convention: Accidentals = 'sharps',
+  sargamLanguage: SargamLanguage = 'english',
 ): string {
   const index = mod12(interval);
-  if (notation === 'sargam') return SARGAM[index]!;
+  if (notation === 'sargam') return (sargamLanguage === 'hindi' ? SARGAM_HINDI : SARGAM)[index]!;
   if (notation === 'degrees') return DEGREES[index]!;
   return (convention === 'sharps' ? SOLFEGE_SHARPS : SOLFEGE_FLATS)[index]!;
 }
@@ -96,10 +141,11 @@ export function relativeDescription(
   interval: number,
   notation: Notation,
   convention: Accidentals = 'sharps',
+  sargamLanguage: SargamLanguage = 'english',
 ): string {
   return notation === 'sargam'
-    ? SARGAM_FULL[mod12(interval)]!
-    : relativeName(interval, notation, convention);
+    ? (sargamLanguage === 'hindi' ? SARGAM_FULL_HINDI : SARGAM_FULL)[mod12(interval)]!
+    : relativeName(interval, notation, convention, sargamLanguage);
 }
 
 export function midiNote(pitch: number, octave: number): number {
@@ -112,8 +158,12 @@ export function frequency(pitch: number, octave = 4, concertA = 440): number {
   return concertA * 2 ** ((midiNote(pitch, octave) - 69) / 12);
 }
 
-export function tonicRelationship(tonic: number, accidentals: Accidentals): string {
-  return `${noteName(tonic, accidentals)} = Sa = Do = 1`;
+export function tonicRelationship(
+  tonic: number,
+  accidentals: Accidentals,
+  sargamLanguage: SargamLanguage = 'english',
+): string {
+  return `${noteName(tonic, accidentals)} = ${relativeName(0, 'sargam', 'sharps', sargamLanguage)} = Do = 1`;
 }
 
 const DEGREE_SOLFEGE: Record<string, string> = {
@@ -138,11 +188,12 @@ export function scaleRelativeName(
   scale: ScaleId,
   direction: Direction,
   convention: Accidentals = 'sharps',
+  sargamLanguage: SargamLanguage = 'english',
 ): string {
   const degree = scaleDegree(interval, scale, direction);
   if (notation === 'degrees' && degree) return degree;
   if (notation === 'solfege' && scale !== 'chromatic' && degree) return DEGREE_SOLFEGE[degree]!;
-  return relativeName(interval, notation, convention);
+  return relativeName(interval, notation, convention, sargamLanguage);
 }
 
 export {

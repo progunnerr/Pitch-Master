@@ -1,9 +1,16 @@
-import type { Accidentals, Direction, Notation, ScaleId } from '../../domain/musicTheory/index.ts';
+import type {
+  Accidentals,
+  Direction,
+  Notation,
+  SargamLanguage,
+  ScaleId,
+} from '../../domain/musicTheory/index.ts';
 import { SCALES } from '../../domain/musicTheory/scales.ts';
 
 export interface Preferences {
   tonic: number;
   notation: Notation;
+  sargamLanguage: SargamLanguage;
   accidentals: Accidentals;
   solfegeConvention: Accidentals;
   octave: number;
@@ -18,6 +25,7 @@ export interface Preferences {
 export const DEFAULT_PREFERENCES: Preferences = {
   tonic: 0,
   notation: 'solfege',
+  sargamLanguage: 'english',
   accidentals: 'sharps',
   solfegeConvention: 'sharps',
   octave: 4,
@@ -56,6 +64,8 @@ export function decodePreferences(raw: string | null): Preferences {
     output.tonic = v.tonic;
   if (v.notation === 'solfege' || v.notation === 'sargam' || v.notation === 'degrees')
     output.notation = v.notation;
+  if (v.sargamLanguage === 'english' || v.sargamLanguage === 'hindi')
+    output.sargamLanguage = v.sargamLanguage;
   if (v.accidentals === 'sharps' || v.accidentals === 'flats') output.accidentals = v.accidentals;
   if (v.solfegeConvention === 'sharps' || v.solfegeConvention === 'flats')
     output.solfegeConvention = v.solfegeConvention;

@@ -75,6 +75,7 @@ function ExerciseSession({
         tonic: p.tonic,
         difficulty: 'beginner',
         accidentals: p.accidentals,
+        sargamLanguage: p.sargamLanguage,
       }),
     ),
   );
@@ -83,6 +84,8 @@ function ExerciseSession({
   const complete = round.status !== 'open';
   const stats = progress.modes[kind];
   const mode = PRACTICE_MODES[kind];
+  const sargam = (interval: number) =>
+    relativeName(interval, 'sargam', p.solfegeConvention, p.sargamLanguage);
 
   const silence = useCallback(() => {
     request.current++;
@@ -111,6 +114,7 @@ function ExerciseSession({
         tonic: nextSa,
         difficulty: nextDifficulty,
         accidentals: p.accidentals,
+        sargamLanguage: p.sargamLanguage,
         previousTonic: current.current.question.tonic,
       }),
     );
@@ -166,7 +170,11 @@ function ExerciseSession({
           <Text accessibilityRole="header" style={styles.title}>
             {mode.title}
           </Text>
-          <Text style={styles.subtitle}>{mode.instruction}</Text>
+          <Text style={styles.subtitle}>
+            {kind === 'sargam'
+              ? `Listen to ${sargam(0)} and a second note, then name its Sargam syllable.`
+              : mode.instruction}
+          </Text>
         </View>
         <ProgressStatus />
         <View style={[styles.workspace, wide && styles.wideWorkspace]}>
@@ -201,7 +209,7 @@ function ExerciseSession({
               {kind === 'sargam' && (
                 <ActionButton
                   icon="chevron-down"
-                  label={`Choose Sa: ${noteName(sa, p.accidentals)}`}
+                  label={`Choose ${sargam(0)}: ${noteName(sa, p.accidentals)}`}
                   onPress={() => setPicker(true)}
                 />
               )}
@@ -249,7 +257,7 @@ function ExerciseSession({
                 <View style={styles.section}>
                   <ActionButton
                     icon="music"
-                    label="Hear the Sa–Ni ladder (hint)"
+                    label={`Hear the ${sargam(0)}–${sargam(11)} ladder (hint)`}
                     onPress={() => {
                       void listen('ladder');
                     }}
@@ -257,8 +265,8 @@ function ExerciseSession({
                   {guidedInterval !== null && (
                     <Text accessibilityLiveRegion="polite" style={[styles.cardTitle, styles.lime]}>
                       {guidedInterval === 12
-                        ? 'Sa · upper octave'
-                        : relativeName(guidedInterval, 'sargam')}
+                        ? `${sargam(0)} · upper octave`
+                        : sargam(guidedInterval)}
                     </Text>
                   )}
                 </View>

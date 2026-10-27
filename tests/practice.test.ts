@@ -213,3 +213,21 @@ test('route validation accepts only the four exercise modes', () => {
   for (const invalid of ['unknown', ['tonic'], undefined, 0, '__proto__'])
     assert.equal(isPracticeKind(invalid), false);
 });
+
+test('Hindi Sargam practice changes labels without changing pitches or answers', () => {
+  const english = createQuestion('sargam', options, () => 0.5);
+  const hindi = createQuestion('sargam', { ...options, sargamLanguage: 'hindi' }, () => 0.5);
+  assert.deepEqual(hindi.promptMidi, english.promptMidi);
+  assert.equal(hindi.target, english.target);
+  assert.deepEqual(
+    hindi.choices.map((choice) => choice.value),
+    english.choices.map((choice) => choice.value),
+  );
+  assert.deepEqual(
+    hindi.choices.map((choice) => choice.label),
+    ['सा', 'रे', 'गा', 'मा', 'पा', 'धा', 'नी'],
+  );
+  assert.match(hindi.prompt, /सा/);
+  assert.match(hindi.hint, /सा, रे, गा, मा/);
+  assert.match(hindi.explanation, /सा, रे, गा, मा, पा, धा, नी, सा/);
+});

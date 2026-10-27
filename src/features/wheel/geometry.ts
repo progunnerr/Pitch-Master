@@ -16,13 +16,13 @@ export function snappedTonic(angle: number): number {
   return normalizePitch(Math.round(angle / SEMITONE_ANGLE));
 }
 
-export function pitchAtPoint(x: number, y: number, size: number): number | null {
+export function pitchAtPoint(x: number, y: number, size: number, outerRotation = 0): number | null {
   'worklet';
   const dx = x - size / 2;
   const dy = y - size / 2;
   const distance = Math.hypot(dx, dy);
   if (distance < size * 0.22 || distance > size * 0.48) return null;
-  return snappedTonic(Math.atan2(dy, dx) + Math.PI / 2);
+  return snappedTonic(Math.atan2(dy, dx) + Math.PI / 2 - outerRotation);
 }
 
 export function pointOnWheel(

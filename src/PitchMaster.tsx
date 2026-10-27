@@ -22,6 +22,7 @@ import {
   midiNote,
   noteName,
   relativeDescription,
+  relativeName,
   scaleRelativeName,
   scaleDegree,
   SCALES,
@@ -238,6 +239,7 @@ export default function PitchMaster() {
                   notation={p.notation}
                   accidentals={p.accidentals}
                   convention={p.solfegeConvention}
+                  sargamLanguage={p.sargamLanguage}
                   playingPitch={audio.playingPitch}
                   scale={p.scale}
                   direction={p.direction}
@@ -260,12 +262,13 @@ export default function PitchMaster() {
               </View>
               <View style={styles.gestureHint}>
                 <Feather name="move" size={13} color={colors.faint} />
-                <Text style={styles.gestureHintText}>Drag the inner ring. Discover a new key.</Text>
+                <Text style={styles.gestureHintText}>Drag either ring. Discover a new key.</Text>
               </View>
               <ScaleFormula
                 scale={p.scale}
                 direction={p.direction}
                 convention={p.solfegeConvention}
+                sargamLanguage={p.sargamLanguage}
               />
             </View>
 
@@ -300,9 +303,10 @@ export default function PitchMaster() {
                   </View>
                   <Text
                     style={styles.relationship}
-                    accessibilityLabel={tonicRelationship(p.tonic, p.accidentals)}
+                    accessibilityLabel={tonicRelationship(p.tonic, p.accidentals, p.sargamLanguage)}
                   >
-                    {noteName(p.tonic, p.accidentals)} <Text style={styles.equals}>=</Text> Sa{' '}
+                    {noteName(p.tonic, p.accidentals)} <Text style={styles.equals}>=</Text>{' '}
+                    {relativeName(0, 'sargam', p.solfegeConvention, p.sargamLanguage)}{' '}
                     <Text style={styles.equals}>=</Text> Do <Text style={styles.equals}>=</Text> 1
                   </Text>
                   <Text style={styles.relationshipHint}>One pitch. Three musical languages.</Text>
@@ -344,7 +348,12 @@ export default function PitchMaster() {
                         p.solfegeConvention,
                       )}{' '}
                       <Text style={styles.translationDim}>/</Text>{' '}
-                      {relativeDescription(interval, 'sargam')}{' '}
+                      {relativeDescription(
+                        interval,
+                        'sargam',
+                        p.solfegeConvention,
+                        p.sargamLanguage,
+                      )}{' '}
                       <Text style={styles.translationDim}>/</Text> {currentDegree}
                     </Text>
                   </View>
@@ -430,8 +439,10 @@ export default function PitchMaster() {
           </View>
           {p.notation === 'sargam' && (
             <Text style={styles.sargamHelp}>
-              Lowercase re, ga, dha, ni = komal (lowered). Ma⁺ = tivra (raised). Pitches use equal
-              temperament; raga intonation can vary.
+              {p.sargamLanguage === 'hindi'
+                ? 'कोमल (lowered): underline below the note. तीव्र मा (raised): vertical mark above मा. '
+                : 'Komal (lowered): underline below the note. Tivra Ma (raised): vertical mark above Ma. '}
+              Pitches use equal temperament; raga intonation can vary.
             </Text>
           )}
         </View>

@@ -74,6 +74,16 @@ export function SettingsPanel({
       </Pressable>
       {expanded && (
         <View style={styles.content}>
+          <Text style={styles.sectionTitle}>SARGAM LANGUAGE</Text>
+          <Segmented
+            label="Sargam language"
+            value={p.sargamLanguage}
+            onChange={(value) => update('sargamLanguage', value)}
+            options={[
+              { value: 'english', label: 'English · Sa Re Ga' },
+              { value: 'hindi', label: 'हिन्दी · सा रे गा' },
+            ]}
+          />
           <Text style={styles.sectionTitle}>NOTE SPELLING</Text>
           <Segmented
             label="Absolute note accidentals"

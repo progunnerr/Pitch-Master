@@ -7,6 +7,7 @@ import {
   relativeName,
   SCALES,
   type Accidentals,
+  type SargamLanguage,
 } from '../../domain/musicTheory/index.ts';
 
 export const PRACTICE_KINDS = ['tonic', 'interval', 'sargam', 'movableDo'] as const;
@@ -66,6 +67,7 @@ interface QuestionOptions {
   difficulty: Difficulty;
   accidentals: Accidentals;
   previousTonic?: number;
+  sargamLanguage?: SargamLanguage;
 }
 
 function choose<T>(values: readonly T[], random: () => number): T {
@@ -87,6 +89,9 @@ export function createQuestion(
         );
   const base = midiNote(tonic, octave);
   const tonicLabel = noteName(tonic, accidentals);
+  const sargam = (interval: number) =>
+    relativeName(interval, 'sargam', 'sharps', options.sargamLanguage);
+  const sa = sargam(0);
   const noteChoices = PITCH_CLASSES.map((pitch) => ({
     value: pitch,
     label: noteName(pitch, accidentals),
@@ -103,7 +108,7 @@ export function createQuestion(
       promptMidi: [base],
       choices: noteChoices,
       hint: `The mystery note is ${tonic <= 5 ? 'in the C–F half' : 'in the F♯–B half'} of the chromatic wheel. Compare it with reference C.`,
-      explanation: `${tonicLabel}${octave} is the tonic: ${tonicLabel} = Sa = Do = 1. Reference C helps you compare the pitches by ear.`,
+      explanation: `${tonicLabel}${octave} is the tonic: ${tonicLabel} = ${sa} = Do = 1. Reference C helps you compare the pitches by ear.`,
     };
   if (kind === 'interval') {
     const intervals = options.difficulty === 'beginner' ? BEGINNER_INTERVALS : ALL_INTERVALS;
@@ -130,7 +135,7 @@ export function createQuestion(
   }
   if (kind === 'sargam') {
     const target = choose(SCALES.major.ascending, random);
-    const syllable = relativeName(target, 'sargam');
+    const syllable = sargam(target);
     return {
       id,
       kind,
@@ -138,19 +143,19 @@ export function createQuestion(
       octave,
       target,
       targetInterval: target,
-      prompt: 'Sa, then one more note. Which syllable follows?',
+      prompt: `${sa}, then one more note. Which syllable follows?`,
       promptMidi: [base, base + target],
       choices: SCALES.major.ascending.map((interval) => ({
         value: interval,
-        label: relativeName(interval, 'sargam'),
+        label: sargam(interval),
       })),
       hint:
         target === 0
-          ? 'Listen for the second note returning to Sa.'
+          ? `Listen for the second note returning to ${sa}.`
           : target <= 5
-            ? 'Listen in the lower half of the ladder: Sa, Re, Ga, Ma.'
-            : 'Listen in the upper half of the ladder: Pa, Dha, Ni.',
-      explanation: `${syllable} is ${target} semitones above Sa (${tonicLabel}). The major Sargam ladder is Sa, Re, Ga, Ma, Pa, Dha, Ni, Sa.`,
+            ? `Listen in the lower half of the ladder: ${[0, 2, 4, 5].map(sargam).join(', ')}.`
+            : `Listen in the upper half of the ladder: ${[7, 9, 11].map(sargam).join(', ')}.`,
+      explanation: `${syllable} is ${target} semitones above ${sa} (${tonicLabel}). The major Sargam ladder is ${[...SCALES.major.ascending, 12].map(sargam).join(', ')}.`,
     };
   }
   const targetInterval = choose(

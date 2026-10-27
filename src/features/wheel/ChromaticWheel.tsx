@@ -21,6 +21,7 @@ import {
   noteName,
   PITCH_CLASSES,
   relativeDescription,
+  relativeName,
   scaleRelativeName,
   isInScale,
   SCALES,
@@ -28,6 +29,7 @@ import {
   type Direction,
   type Accidentals,
   type Notation,
+  type SargamLanguage,
 } from '../../domain/musicTheory';
 import { colors, fonts } from '../../theme/theme';
 import {
@@ -46,6 +48,7 @@ export interface WheelProps {
   notation: Notation;
   accidentals: Accidentals;
   convention: Accidentals;
+  sargamLanguage: SargamLanguage;
   playingPitch: number | null;
   scale: ScaleId;
   direction: Direction;
@@ -64,26 +67,33 @@ function sector(size: number, pitch: number, inner: number, outer: number): stri
   return `M ${point(outer, start)} A ${size * outer} ${size * outer} 0 0 1 ${point(outer, end)} L ${point(inner, end)} A ${size * inner} ${size * inner} 0 0 0 ${point(inner, start)} Z`;
 }
 
-function RelativeLabel({
+function WheelLabel({
   pitch,
   size,
+  ring,
   rotation,
   text,
   description,
+  hint,
   inScale,
   playing,
+  selected,
   onActivate,
 }: {
   pitch: number;
   size: number;
-  rotation: SharedValue<number>;
+  ring: 'inner' | 'outer';
+  rotation: Pick<SharedValue<number>, 'get'>;
   text: string;
   description: string;
+  hint: string;
   inScale: boolean;
   playing: boolean;
+  selected: boolean;
   onActivate: () => void;
 }) {
-  const point = pointOnWheel(pitch, size * 0.285, size / 2);
+  const outer = ring === 'outer';
+  const point = pointOnWheel(pitch, size * (outer ? 0.404 : 0.285), size / 2);
   const upright = useAnimatedStyle(() => ({ transform: [{ rotate: `${-rotation.get()}rad` }] }));
   return (
     <View
@@ -91,20 +101,22 @@ function RelativeLabel({
       accessible
       accessibilityRole="button"
       accessibilityLabel={description}
-      accessibilityHint="Play this relative pitch"
+      accessibilityHint={hint}
+      accessibilityState={outer ? { selected } : undefined}
       accessibilityActions={[{ name: 'activate' }]}
       onAccessibilityAction={(event) => {
         if (event.nativeEvent.actionName === 'activate') onActivate();
       }}
     >
       <Animated.Text
-        maxFontSizeMultiplier={1.25}
+        maxFontSizeMultiplier={outer ? 1.3 : 1.25}
         style={[
-          styles.relative,
-          !inScale && styles.dimRelative,
+          outer ? styles.absolute : styles.relative,
+          !inScale && (outer ? styles.dimAbsolute : styles.dimRelative),
+          { fontSize: size * (outer ? 0.053 : 0.043) },
+          outer && selected && styles.selectedLabel,
           playing && styles.playingLabel,
-          { fontSize: size * 0.043 },
-          pitch === 0 && styles.tonicLabel,
+          !outer && selected && styles.tonicLabel,
           upright,
         ]}
       >
@@ -121,6 +133,7 @@ export default function ChromaticWheel({
   notation,
   accidentals,
   convention,
+  sargamLanguage,
   playingPitch,
   scale,
   direction,
@@ -130,17 +143,32 @@ export default function ChromaticWheel({
   onSnap,
 }: WheelProps) {
   const center = size / 2;
+  // The tonic is the angle between the rings; either ring can change that interval.
   const rotation = useSharedValue(tonic * SEMITONE_ANGLE);
+  const outerRotation = useSharedValue(0);
+  const outerAnchor = useSharedValue(0);
+  const targetTonic = useSharedValue(tonic);
   const previousAngle = useSharedValue(0);
   const previousSnap = useSharedValue(tonic);
   const dragging = useSharedValue(false);
-  const ringStyle = useAnimatedStyle(() => ({ transform: [{ rotate: `${rotation.get()}rad` }] }));
-  const ringTransform = useDerivedValue(() => [{ rotate: rotation.get() }]);
+  const draggingOuter = useSharedValue(false);
+  const innerRotation = useDerivedValue(() => outerRotation.get() + rotation.get());
+  const ringStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${innerRotation.get()}rad` }],
+  }));
+  const ringTransform = useDerivedValue(() => [{ rotate: innerRotation.get() }]);
+  const outerRingStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${outerRotation.get()}rad` }],
+  }));
+  const outerRingTransform = useDerivedValue(() => [{ rotate: outerRotation.get() }]);
 
   useEffect(() => {
+    // A completed drag already scheduled both rings to settle together.
+    if (targetTonic.get() === tonic) return;
+    targetTonic.set(tonic);
     const target = rotation.get() + shortestAngle(tonic * SEMITONE_ANGLE - rotation.get());
     rotation.set(withTiming(target, { duration: 240 }));
-  }, [tonic, rotation]);
+  }, [tonic, rotation, targetTonic]);
 
   const pan = usePanGesture({
     minDistance: 7,
@@ -148,22 +176,35 @@ export default function ChromaticWheel({
     onBegin: (event) => {
       'worklet';
       const distance = Math.hypot(event.x - center, event.y - center);
-      if (distance < size * 0.225 || distance > size * 0.34) {
+      if (distance < size * 0.225 || distance > size * 0.48) {
         GestureStateManager.fail(event.handlerTag);
         return;
       }
-      cancelAnimation(rotation);
+      draggingOuter.set(distance > size * 0.34);
       previousAngle.set(Math.atan2(event.y - center, event.x - center));
-      previousSnap.set(snappedTonic(rotation.get()));
     },
     onActivate: () => {
       'worklet';
+      cancelAnimation(rotation);
+      cancelAnimation(outerRotation);
+      // Finish an interrupted snap before starting the next independent rotation.
+      outerRotation.set(outerAnchor.get());
+      rotation.set(
+        rotation.get() + shortestAngle(targetTonic.get() * SEMITONE_ANGLE - rotation.get()),
+      );
+      previousSnap.set(targetTonic.get());
       dragging.set(true);
     },
     onUpdate: (event) => {
       'worklet';
       const angle = Math.atan2(event.y - center, event.x - center);
-      rotation.set(rotation.get() + shortestAngle(angle - previousAngle.get()));
+      const delta = shortestAngle(angle - previousAngle.get());
+      if (draggingOuter.get()) {
+        outerRotation.set(outerRotation.get() + delta);
+        rotation.set(rotation.get() - delta);
+      } else {
+        rotation.set(rotation.get() + delta);
+      }
       previousAngle.set(angle);
       const step = snappedTonic(rotation.get());
       if (step !== previousSnap.get()) {
@@ -175,6 +216,13 @@ export default function ChromaticWheel({
       'worklet';
       if (!event.canceled) {
         const target = Math.round(rotation.get() / SEMITONE_ANGLE) * SEMITONE_ANGLE;
+        if (draggingOuter.get()) {
+          // Equal and opposite snap animations keep the inner ring in place.
+          const outerTarget = outerRotation.get() + rotation.get() - target;
+          outerAnchor.set(outerTarget);
+          outerRotation.set(withTiming(outerTarget, { duration: 160 }));
+        }
+        targetTonic.set(snappedTonic(target));
         rotation.set(withTiming(target, { duration: 160 }));
         scheduleOnRN(onRotate, snappedTonic(target));
       }
@@ -182,10 +230,16 @@ export default function ChromaticWheel({
     onFinalize: (event) => {
       'worklet';
       if (event.canceled && dragging.get()) {
-        rotation.set(
-          withTiming(rotation.get() + shortestAngle(tonic * SEMITONE_ANGLE - rotation.get()), {
+        outerRotation.set(
+          withTiming(outerRotation.get() + shortestAngle(outerAnchor.get() - outerRotation.get()), {
             duration: 160,
           }),
+        );
+        rotation.set(
+          withTiming(
+            rotation.get() + shortestAngle(targetTonic.get() * SEMITONE_ANGLE - rotation.get()),
+            { duration: 160 },
+          ),
         );
       }
       dragging.set(false);
@@ -196,7 +250,7 @@ export default function ChromaticWheel({
     onDeactivate: (event) => {
       'worklet';
       if (event.canceled) return;
-      const pitch = pitchAtPoint(event.x, event.y, size);
+      const pitch = pitchAtPoint(event.x, event.y, size, outerRotation.get());
       if (pitch === null) return;
       const distance = Math.hypot(event.x - center, event.y - center);
       if (distance > size * 0.34) scheduleOnRN(onSelectTonic, pitch);
@@ -223,19 +277,35 @@ export default function ChromaticWheel({
               />
             );
           })}
-          {PITCH_CLASSES.map((pitch) => (
-            <Path
-              key={pitch}
-              path={sector(size, pitch, 0.344, 0.468)}
-              color={
-                pitch === tonic
-                  ? '#2B3820'
-                  : isInScale(pitch, tonic, scale, direction)
-                    ? '#222D1B'
-                    : '#141811'
-              }
-            />
-          ))}
+          <Group origin={vec(center, center)} transform={outerRingTransform}>
+            {PITCH_CLASSES.map((pitch) => (
+              <Path
+                key={pitch}
+                path={sector(size, pitch, 0.344, 0.468)}
+                color={
+                  pitch === tonic
+                    ? '#2B3820'
+                    : isInScale(pitch, tonic, scale, direction)
+                      ? '#222D1B'
+                      : '#141811'
+                }
+              />
+            ))}
+            {PITCH_CLASSES.map((pitch) => {
+              const p = pointOnWheel(pitch, size * 0.45, center);
+              return pitch === tonic ||
+                pitch === playingPitch ||
+                (scale !== 'chromatic' && isInScale(pitch, tonic, scale, direction)) ? (
+                <Circle
+                  key={pitch}
+                  cx={p.x}
+                  cy={p.y}
+                  r={pitch === playingPitch ? 3.5 : pitch === tonic ? 2.5 : 1.8}
+                  color={pitch === playingPitch || pitch === tonic ? colors.lime : '#8EAA68'}
+                />
+              ) : null;
+            })}
+          </Group>
           <Circle
             cx={center}
             cy={center}
@@ -282,70 +352,61 @@ export default function ChromaticWheel({
             style="stroke"
             strokeWidth={1}
           />
-          {PITCH_CLASSES.map((pitch) => {
-            const p = pointOnWheel(pitch, size * 0.45, center);
-            return pitch === tonic ||
-              pitch === playingPitch ||
-              (scale !== 'chromatic' && isInScale(pitch, tonic, scale, direction)) ? (
-              <Circle
-                key={pitch}
-                cx={p.x}
-                cy={p.y}
-                r={pitch === playingPitch ? 3.5 : pitch === tonic ? 2.5 : 1.8}
-                color={pitch === playingPitch || pitch === tonic ? colors.lime : '#8EAA68'}
-              />
-            ) : null;
-          })}
         </Canvas>
-        {PITCH_CLASSES.map((pitch) => {
-          const p = pointOnWheel(pitch, size * 0.404, center);
-          return (
-            <View
+        <Animated.View
+          style={[StyleSheet.absoluteFill, outerRingStyle]}
+          pointerEvents="box-none"
+          testID="outer-ring"
+        >
+          {PITCH_CLASSES.map((pitch) => (
+            <WheelLabel
               key={pitch}
-              style={[styles.label, { left: p.x - 23, top: p.y - 22 }]}
-              accessible
-              accessibilityRole="button"
-              accessibilityLabel={`Set ${noteName(pitch, accidentals)} as tonic`}
-              accessibilityHint={
+              pitch={pitch}
+              size={size}
+              ring="outer"
+              rotation={outerRotation}
+              text={noteName(pitch, accidentals)}
+              description={`Set ${noteName(pitch, accidentals)} as tonic`}
+              hint={
                 isInScale(pitch, tonic, scale, direction)
                   ? `In ${SCALES[scale].name} scale`
                   : `Outside ${SCALES[scale].name} scale`
               }
-              accessibilityState={{ selected: pitch === tonic }}
-              accessibilityActions={[{ name: 'activate' }]}
-              onAccessibilityAction={(event) => {
-                if (event.nativeEvent.actionName === 'activate') onSelectTonic(pitch);
-              }}
-            >
-              <Text
-                maxFontSizeMultiplier={1.3}
-                style={[
-                  styles.absolute,
-                  !isInScale(pitch, tonic, scale, direction) && styles.dimAbsolute,
-                  { fontSize: size * 0.053 },
-                  pitch === tonic && styles.selectedLabel,
-                  pitch === playingPitch && styles.playingLabel,
-                ]}
-              >
-                {noteName(pitch, accidentals)}
-              </Text>
-            </View>
-          );
-        })}
-        <Animated.View style={[StyleSheet.absoluteFill, ringStyle]} pointerEvents="none">
+              inScale={isInScale(pitch, tonic, scale, direction)}
+              selected={pitch === tonic}
+              playing={pitch === playingPitch}
+              onActivate={() => onSelectTonic(pitch)}
+            />
+          ))}
+        </Animated.View>
+        <Animated.View
+          style={[StyleSheet.absoluteFill, ringStyle]}
+          pointerEvents="none"
+          testID="inner-ring"
+        >
           {PITCH_CLASSES.map((pitch) => (
-            <RelativeLabel
+            <WheelLabel
               key={pitch}
               pitch={pitch}
               size={size}
-              rotation={rotation}
-              text={scaleRelativeName(pitch, notation, scale, direction, convention)}
+              ring="inner"
+              rotation={innerRotation}
+              text={scaleRelativeName(
+                pitch,
+                notation,
+                scale,
+                direction,
+                convention,
+                sargamLanguage,
+              )}
               description={
                 notation === 'sargam'
-                  ? relativeDescription(pitch, notation, convention)
-                  : scaleRelativeName(pitch, notation, scale, direction, convention)
+                  ? relativeDescription(pitch, notation, convention, sargamLanguage)
+                  : scaleRelativeName(pitch, notation, scale, direction, convention, sargamLanguage)
               }
+              hint="Play this relative pitch"
               inScale={isInScale(pitch, 0, scale, direction)}
+              selected={pitch === 0}
               playing={playingPitch !== null && normalizePitch(playingPitch - tonic) === pitch}
               onActivate={() => onPlayPitch(normalizePitch(tonic + pitch))}
             />
@@ -379,7 +440,7 @@ export default function ChromaticWheel({
             maxFontSizeMultiplier={1.1}
             style={[styles.centerRelative, { fontSize: size * 0.029 }]}
           >
-            Sa · Do · 1
+            {relativeName(0, 'sargam', convention, sargamLanguage)} · Do · 1
           </Text>
           <View style={styles.centerDash} />
         </View>

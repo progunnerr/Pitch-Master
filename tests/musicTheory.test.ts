@@ -8,6 +8,8 @@ import {
   mod12,
   noteName,
   relativeName,
+  relativeDescription,
+  scaleRelativeName,
   relativeSemitone,
   SCALES,
   scalePitches,
@@ -41,9 +43,9 @@ test('keeps accidental spelling separate from pitch and convention', () => {
   assert.equal(relativeName(1, 'solfege', 'flats'), 'Ra');
   assert.equal(relativeName(6, 'solfege', 'sharps'), 'Fi');
   assert.equal(relativeName(6, 'solfege', 'flats'), 'Se');
-  assert.equal(relativeName(8, 'sargam'), 'dha');
+  assert.equal(relativeName(8, 'sargam'), 'D\u0332h\u0332a\u0332');
   assert.equal(relativeName(9, 'sargam'), 'Dha');
-  assert.equal(relativeName(6, 'sargam'), 'Ma⁺');
+  assert.equal(relativeName(6, 'sargam'), 'M\u030Da');
   assert.equal(relativeName(11, 'solfege'), 'Ti');
 });
 
@@ -93,4 +95,53 @@ test('descending melodic minor lowers degrees 6 and 7 and preserves octave cross
     scalePitches(11, 'melodicMinor', 'descending'),
     [23, 21, 19, 18, 16, 14, 13, 11],
   );
+});
+
+test('Hindi Sargam preserves all chromatic distinctions and leaves other notation unchanged', () => {
+  const hindi = [
+    'सा',
+    'रे\u0332',
+    'रे',
+    'गा\u0332',
+    'गा',
+    'मा',
+    'मा\u030D',
+    'पा',
+    'धा\u0332',
+    'धा',
+    'नी\u0332',
+    'नी',
+  ];
+  for (let interval = 0; interval < 12; interval++) {
+    assert.equal(relativeName(interval, 'sargam', 'sharps', 'hindi'), hindi[interval]);
+    assert.equal(relativeName(interval + 12, 'sargam', 'flats', 'hindi'), hindi[interval]);
+    for (const notation of ['solfege', 'degrees'] as const) {
+      assert.equal(
+        relativeName(interval, notation, 'sharps', 'hindi'),
+        relativeName(interval, notation),
+      );
+    }
+  }
+  assert.equal(relativeDescription(1, 'sargam', 'sharps', 'hindi'), 'कोमल रे');
+  assert.equal(relativeDescription(6, 'sargam', 'sharps', 'hindi'), 'तीव्र मा');
+  assert.equal(
+    scaleRelativeName(8, 'sargam', 'melodicMinor', 'descending', 'sharps', 'hindi'),
+    'धा\u0332',
+  );
+  assert.equal(tonicRelationship(2, 'sharps', 'hindi'), 'D = सा = Do = 1');
+});
+
+test('traditional Sargam marks distinguish only komal and tivra notes in both languages', () => {
+  for (const language of ['english', 'hindi'] as const) {
+    for (let interval = 0; interval < 12; interval++) {
+      const label = relativeName(interval, 'sargam', 'sharps', language);
+      assert.equal(label.includes('\u0332'), [1, 3, 8, 10].includes(interval));
+      assert.equal(label.includes('\u030D'), interval === 6);
+      assert.doesNotMatch(label, /[♭⁺]/);
+      const description = relativeDescription(interval, 'sargam', 'sharps', language);
+      assert.doesNotMatch(description, /[\u0332\u030D]/);
+    }
+  }
+  assert.equal(relativeDescription(8, 'sargam'), 'komal Dha');
+  assert.equal(relativeDescription(6, 'sargam'), 'tivra Ma');
 });

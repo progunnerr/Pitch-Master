@@ -11,6 +11,7 @@ import {
   type Accidentals,
   type Direction,
   type ScaleId,
+  type SargamLanguage,
 } from '../../domain/musicTheory';
 import { colors, fonts } from '../../theme/theme';
 
@@ -90,10 +91,12 @@ export function ScaleFormula({
   scale,
   direction,
   convention,
+  sargamLanguage,
 }: {
   scale: ScaleId;
   direction: Direction;
   convention: Accidentals;
+  sargamLanguage: SargamLanguage;
 }) {
   const intervals = [...scaleIntervals(scale, direction), 12];
   const degrees = [...scaleDegrees(scale, direction), '8'];
@@ -105,7 +108,9 @@ export function ScaleFormula({
     .map((interval) => scaleRelativeName(interval, 'solfege', scale, direction, convention))
     .join(' · ');
   const sargam = intervals
-    .map((interval) => scaleRelativeName(interval, 'sargam', scale, direction, convention))
+    .map((interval) =>
+      scaleRelativeName(interval, 'sargam', scale, direction, convention, sargamLanguage),
+    )
     .join(' · ');
   return (
     <View style={styles.formulaCard} testID="scale-formula">

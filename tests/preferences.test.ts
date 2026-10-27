@@ -68,3 +68,15 @@ test('retains valid fields while rejecting invalid saved values', () => {
   );
   assert.deepEqual(decoded, { ...DEFAULT_PREFERENCES, notation: 'sargam' });
 });
+
+test('saves Hindi Sargam and defaults older or invalid language preferences to English', () => {
+  const hindi = { ...DEFAULT_PREFERENCES, sargamLanguage: 'hindi' as const };
+  assert.deepEqual(decodePreferences(encodePreferences(hindi)), hindi);
+  for (const sargamLanguage of [undefined, null, 'unknown']) {
+    const restored = decodePreferences(
+      JSON.stringify({ version: 1, preferences: { tonic: 7, sargamLanguage } }),
+    );
+    assert.equal(restored.sargamLanguage, 'english');
+    assert.equal(restored.tonic, 7);
+  }
+});
