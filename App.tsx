@@ -6,7 +6,7 @@ import { SpaceGrotesk_500Medium } from '@expo-google-fonts/space-grotesk/500Medi
 import { SpaceGrotesk_600SemiBold } from '@expo-google-fonts/space-grotesk/600SemiBold';
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, Platform, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import type { PropsWithChildren } from 'react';
@@ -24,7 +24,8 @@ export default function App({ children }: PropsWithChildren) {
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }}>
       <SafeAreaProvider>
-        <StatusBar style="light" />
+        {/* iOS status bars are managed by the native Stack's view controllers. */}
+        {Platform.OS !== 'ios' && <StatusBar style="light" />}
         {loaded || error ? (
           children
         ) : (

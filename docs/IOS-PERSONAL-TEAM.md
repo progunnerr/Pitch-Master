@@ -175,6 +175,27 @@ This CocoaPods HTTPS fix is separate from the Apple WWDR signing-chain fix above
 If Expo stops at provisioning after preparing the project, continue in Xcode below.
 The CLI attempt alone was not the final verified installation path in this session.
 
+## Restore Skia frameworks after reinstalling JavaScript dependencies
+
+After running `npm ci` with an existing `ios/` project, refresh CocoaPods before
+building again in Xcode:
+
+```sh
+cd /path/to/Pitch-Master
+SSL_CERT_FILE=/opt/homebrew/etc/ca-certificates/cert.pem pod install --project-directory=ios --no-repo-update
+```
+
+Skia 2.14.0 copies its prebuilt Apple frameworks from the installed
+`react-native-skia-apple-*` packages into `@shopify/react-native-skia/libs/` during
+Pod installation. Reinstalling `node_modules` removes that generated copy while
+the existing Pods project still references it. The resulting Xcode error mentions
+`rsync`, `libskia.xcframework/ios-arm64_arm64e/*`, and `No such file or directory`.
+Running Pod installation restores the frameworks from the installed packages.
+
+When it completes, build again with **Product → Run** in the existing workspace.
+This repair does not require deleting the app, regenerating the native project,
+or changing signing settings.
+
 ## Configure automatic signing and run Release in Xcode
 
 ```sh
