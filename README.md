@@ -65,6 +65,21 @@ Open the headphones button in the explorer header to enter Practice.
 
 Progress is stored on this device, without an account or cloud sync. Incomplete rounds are not scored or restored. No microphone is used.
 
+### Guitar Practice Studio
+
+Use the persistent bottom navigation to open **Explore**, **Listen** (ear training), **Strum**, **Chords**, **Routines**, or **History** directly. Strumming and G → D chord changes also have prominent shortcuts on the explorer. Chords opens directly in chord-transition mode; both trainers can combine chords and rhythm. The Routines screen starts with saved sessions and routine actions, with session preferences below the routine list. A **Continue practice** shortcut appears above the navigation whenever a saved session is available. Focused exercises, routine editing, and the session player keep their dedicated layouts. The previous `/guitar` link opens Routines for compatibility.
+
+- Loop downstrokes (↓), upstrokes (↑), percussive mutes (×), and rests (–) at 40–160 BPM with an audible, accented metronome and a following playhead. The two starting presets are Down/Up/Down/Up and Down/Up/Mute/Up. Their initial positions are editable; actions store independent beat offsets, including fractional positions.
+- Edit patterns over 1, 2, or 4 bars, with 2, 3, 4, or 6 beats per bar and quarter, eighth, triplet, or sixteenth-note grids. Save custom patterns or customize an individual routine block. A rest is explicit; an empty grid position has no action.
+- Practise G major and D major separately or alongside a strumming pattern. Chord diagrams show string numbers, open/muted strings, frets, and fingers. All six string fingerings are editable. D's optional thumb can fret F♯ on string 6/fret 2 (D/F♯), mute that string, or be omitted. Chord steps have configurable bar counts and loop in order.
+- Create, edit, reorder, duplicate, and delete routines and exercise blocks. Each block has its own type, duration, BPM, pattern, chord progression, and optional break. **Daily Strumming Practice** starts with the two requested 15-minute exercises: 30 active minutes, excluding breaks and count-ins. Spider walk is not included.
+- Timed sessions offer a countdown, one-bar count-in, metronome toggle, automatic advancement or manual confirmation, pause/resume, skip, end, and restart. Restart saves prior practice as a separate session. Loop previews in the trainer are untimed; choose **Use this setup in a routine** to record timed practice.
+- History includes actual active time per exercise, BPM, completion/skipped/partial states, weekly totals, and total minutes. Routine snapshots preserve history when a routine is edited or deleted. Data stays in a separate, versioned AsyncStorage record on this device; no account or network service is required.
+
+Practice time and audio pause when the player loses focus, the app backgrounds, Android loses interaction focus, or playback is interrupted. Resume is explicit. Timestamp reconciliation prevents timer drift and excludes paused time, count-ins, breaks, confirmation waits, and skipped remainder. Sessions checkpoint every five seconds and on controls, phase changes, and lifecycle events. Cold launches restore the last checkpoint paused; an abrupt process termination can lose up to five seconds since that checkpoint, and never credits time while the app was closed.
+
+The metronome marks beat 1 of every bar with a brighter, longer bell-like ping; the remaining beats use short clicks. It uses bundled PCM loops at 80 BPM with native playback rates from 0.5× to 2×. JavaScript does not schedule individual audible clicks. Regenerate these assets with `node scripts/generate-metronome.mjs`.
+
 ## Use the wheel
 
 **Outer ring:** absolute pitches in chromatic order, starting with C at the top. **Inner ring:** intervals from the current tonic. Moving the inner ring clockwise raises the tonic; moving it counterclockwise lowers the tonic. Do, Sa, and degree 1 always align with the highlighted absolute note.
@@ -76,7 +91,7 @@ With a non-chromatic scale, degree and solfège labels follow that scale's inter
 ## Validate
 
 ```sh
-npm run check         # Lint, strict TypeScript, and 62 automated tests
+npm run check         # Lint, strict TypeScript, and automated tests
 npm run export:web    # Production browser bundle
 npx expo export --platform android --platform ios
 npx expo install --check
@@ -86,6 +101,8 @@ npx expo-doctor
 Tests cover all 144 pitch/tonic relationships, every scale in all twelve keys and both directions, formula spelling, octave crossings through B6, wheel hit testing, corrupt preference recovery, and audio cancellation races. Drone tests check tuning within 0.01 cent, phase continuity, steady amplitude, mixing headroom, independent playback, and releasing old players while retuning.
 
 Practice tests cover all four question types, supported octaves and keys, difficulty ranges, changing Do, Sargam syllables, listening/answer gates, retries, assistance, reveals, duplicate results, streaks, saved progress decoding, and bounded history.
+
+Guitar tests cover preset durations and fingerings, independent beat placement, configurable chord bar counts, delayed timer ticks, count-ins, breaks, pause/resume, skips, manual progression, partial sessions, snapshot isolation, checkpoint recovery, storage validation, and local calendar-week totals. Real-device audio latency, Bluetooth/headphone interruptions, and background lifecycle behavior still require device checks.
 
 On restricted Windows environments, Hermes may need a writable temporary directory. Set `TEMP` and `TMP` to an existing directory within the workspace before exporting; see [verification notes](docs/VERIFICATION.md).
 
@@ -98,6 +115,7 @@ src/features/scales/    Scale selection, formulas, and equivalent notation
 src/features/audio/     Offline notes/drone, independent voice engines, Expo lifecycle
 src/features/settings/  Validated versioned preferences, persistence, and settings UI
 src/features/practice/  Pure exercise/progress rules, answer wheel, guided practice screens
+src/features/guitar/    Rhythm/chord editors, routines, timed sessions, local history, metronome
 src/app/                Expo Router explorer, practice hub, and exercise routes
 src/components/         Accessible controls and tonic picker
 src/theme/              Palette, bundled font names, and screen styles

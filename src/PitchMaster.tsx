@@ -134,7 +134,7 @@ export default function PitchMaster() {
     );
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right', 'bottom']}>
+    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
       <ScrollView
         ref={scroll}
         contentContainerStyle={styles.scrollContent}
@@ -185,6 +185,21 @@ export default function PitchMaster() {
               Every note, connected.
             </Text>
             <Text style={styles.subtitle}>A new way to see music. A better way to hear it.</Text>
+          </View>
+
+          <View style={{ marginBottom: 24, flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+            <ActionButton
+              icon="activity"
+              label="Strumming & rhythm"
+              style={{ flexGrow: 1 }}
+              onPress={() => router.navigate('/guitar/trainer')}
+            />
+            <ActionButton
+              icon="grid"
+              label="G → D chord changes"
+              style={{ flexGrow: 1 }}
+              onPress={() => router.navigate('/guitar/chords')}
+            />
           </View>
 
           <View

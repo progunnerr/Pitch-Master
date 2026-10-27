@@ -14,7 +14,7 @@ export default function PracticeHub() {
   const { progress, ready } = usePracticeProgress();
   const totals = progressTotals(progress);
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
       <ScrollView contentContainerStyle={styles.page}>
         <PracticeHeader />
         <View style={styles.section}>
